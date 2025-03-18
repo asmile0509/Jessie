@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心情溫度計</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7f6f3;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #37352f;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+        .mood-meter {
+            position: relative;
+            height: 6px;
+            background: linear-gradient(to right, #ff6b6b, #ffcc5c, #88d8b0);
+            border-radius: 3px;
+            margin: 40px 10px 60px 10px;
+        }
+        .slider {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background-color: white;
+            border: 2px solid #37352f;
+            border-radius: 50%;
+            top: -10px;
+            left: 50%;
+            margin-left: -12px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .slider:hover {
+            transform: scale(1.1);
+        }
+        .slider:active {
+            transform: scale(0.95);
+        }
+        .mood-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: -40px;
+            padding: 0 10px;
+            font-size: 18px;
+        }
+        .recommendation {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f1f1f0;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .recommendation h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        .recommendation p {
+            margin-bottom: 5px;
+        }
+        .selected-mood {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 500;
+            margin: 25px 0;
+        }
+        .mood-score {
+            font-weight: 600;
+            color: #2d7ff9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🌡️ 今天的心情溫度計 🌡️</h2>
+        
+        <div class="selected-mood">
+            你的心情指數：<span class="mood-score">5</span>/10
+        </div>
+        
+        <div class="mood-meter">
+            <div class="slider" id="slider"></div>
+        </div>
+        
+        <div class="mood-labels">
+            <div>😞</div>
+            <div>😐</div>
+            <div>😊</div>
+        </div>
+        
+        <div class="recommendation">
+            <h3>根據你的心情，我們推薦：</h3>
+            <p id="recommendation-text">心情平穩：《主題式冥想》—— 進一步提升內在平靜</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const slider = document.getElementById('slider');
+            const moodMeter = document.querySelector('.mood-meter');
+            const moodScore = document.querySelector('.mood-score');
+            const recommendationText = document.getElementById('recommendation-text');
+            
+            let isDragging = false;
+            
+            // 初始化位置
+            positionSlider(50);
+            updateMoodScore(5);
+            
+            // 滑鼠事件
+            slider.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', endDrag);
+            
+            // 觸控事件
+            slider.addEventListener('touchstart', startDrag);
+            document.addEventListener('touchmove', drag);
+            document.addEventListener('touchend', endDrag);
+            
+            // 點擊滑軌直接跳到位置
+            moodMeter.addEventListener('click', function(e) {
+                if (e.target !== slider) {
+                    const rect = moodMeter.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const percentage = (x / rect.width) * 100;
+                    positionSlider(percentage);
+                    updateRecommendation(percentage);
+                }
+            });
+            
+            function startDrag(e) {
+                e.preventDefault();
+                isDragging = true;
+            }
+            
+            function drag(e) {
+                if (!isDragging) return;
+                
+                e.preventDefault();
+                const rect = moodMeter.getBoundingClientRect();
+                
+                // 處理滑鼠或觸控事件
+                let clientX;
+                if (e.type === 'touchmove') {
+                    clientX = e.touches[0].clientX;
+                } else {
+                    clientX = e.clientX;
+                }
+                
+                // 計算位置百分比
+                let x = clientX - rect.left;
+                if (x < 0) x = 0;
+                if (x > rect.width) x = rect.width;
+                
+                const percentage = (x / rect.width) * 100;
+                positionSlider(percentage);
+                updateRecommendation(percentage);
+            }
+            
+            function endDrag() {
+                isDragging = false;
+            }
+            
+            function positionSlider(percentage) {
+                if (percentage < 0) percentage = 0;
+                if (percentage > 100) percentage = 100;
+                
+                slider.style.left = `${percentage}%`;
+                updateMoodScore(Math.round(percentage / 10));
+            }
+            
+            function updateMoodScore(score) {
+                moodScore.textContent = score;
+            }
+            
+            function updateRecommendation(percentage) {
+                if (percentage < 33) {
+                    recommendationText.textContent = "心情低落：《安心陪跑》—— 讓我們一起面對挑戰";
+                } else if (percentage < 66) {
+                    recommendationText.textContent = "心情平穩：《主題式冥想》—— 進一步提升內在平靜";
+                } else {
+                    recommendationText.textContent = "心情愉快：《能量提升》—— 讓好心情持續發光";
+                }
+            }
+        });
+    </script>
+</body>
+</html>
